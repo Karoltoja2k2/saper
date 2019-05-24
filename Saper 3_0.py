@@ -7,6 +7,7 @@ def ekranstartowy():
     """menu glowne"""
     menu = Tk()
 
+    menu.resizable(0,0)
     menu.title("Minesweeper")
     backg = "#126748"
     menu.configure(bg=backg)
