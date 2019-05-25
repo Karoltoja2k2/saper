@@ -57,7 +57,7 @@ def ekranstartowy():
             R2 = Button(menu, image=srednia, bg=backg, borderwidth=0, activebackground=backg, command=menus.sredni)
             R2.grid(column=1, row=3)
 
-            R3 = Button(menu, image=expert, bg=backg,borderwidth=0, activebackground=backg, command=menus.trudny)
+            R3 = Button(menu, image=expert, bg=backg, borderwidth=0, activebackground=backg, command=menus.trudny)
             R3.grid(column=1, row=6)
 
             odstep2 = Label(menu, bg=backg)
@@ -88,7 +88,7 @@ def ekranstartowy():
     menus.rysowanie()
 
 
-def staty(czas, wynik):
+def staty(czas, wynik, status):
     """koncowe statystyki"""
     czcionka = font.Font(family='Helvetica', size=24)
 
@@ -96,22 +96,30 @@ def staty(czas, wynik):
     class Statystyki:
 
         wygrana = Tk()
+        wygrana.resizable(0,0)
         wygrana.title("Gratulację!")
         backg = "#126748"
         wygrana.configure(bg=backg)
 
-        def okno(self,czas_gry, w):
+        def okno(self,czas_gry, w, status):
             """wyglad okna"""
-            label = Label(stats.wygrana, font=czcionka, fg='white', bg=stats.backg,
-                          text='Udało ci się rozbroić wszystkie miny w czasie {:.2f} sekund\n'
-                                              'Twój wynik to {:.0f}  '.format(czas_gry, w / czas_gry))
+            if status == 'wygrana':
+                label = Label(stats.wygrana, font=czcionka, fg='white', bg=stats.backg,
+                              text='Udało ci się rozbroić wszystkie miny w czasie {:.2f} sekund\n'
+                                                  'Twój wynik to {:.0f}  '.format(czas_gry, w / czas_gry))
+
+            else:
+                label = Label(stats.wygrana, font=czcionka, fg='white', bg=stats.backg,
+                              text='Nie udało ci się rozbroić wszystkich min, twój czas to {:.2f} sekund\n'
+                                   'Twój wynik to {:.0f}  '.format(czas_gry, w / (czas_gry * 10)))
+
             label.grid(row=0, column=0)
 
         def zamknij(self):
             stats.wygrana.destroy()
 
     stats=Statystyki()
-    stats.okno(czas, wynik)
+    stats.okno(czas, wynik, status)
 
 
 
@@ -143,6 +151,8 @@ def main(poziom):
         liczbabomb_stala = ustawienia[2]
         wynik = 0
 
+        odkryte_pola = 0
+
         licznik_widoczny = liczbabomb
         licznik_ukryty = liczbabomb
 
@@ -156,7 +166,7 @@ def main(poziom):
             okno.destroy()
             ekranstartowy()
 
-        def koniec_gry(self, event=None):
+        def koniec_gry(self, status=None, event=None):
             """odkrywa cala plansze po przegranej lub wszystkie bomby po wygranej"""
             for p in plansza:
                 if p[3] == False:
@@ -167,6 +177,11 @@ def main(poziom):
                 elif p[3] == True:
                     koniecgry = Label(okno, image=ibomb, bg=backg, activebackground=backg, borderwidth=0)
                     koniecgry.grid(column=p[2], row=p[1])
+
+
+            czas_konca = time.time()
+            czas_gry = czas_konca - saps.czas_startu
+            staty(czas_gry, saps.wynik, status)
 
 
 
@@ -182,7 +197,14 @@ def main(poziom):
             pos=saps.click()
 
             saps.licznik_widoczny += 1
-            label_iloscbomb = Label(okno, bg=backg, font=czcionka, text="Ilość bomb: {}".format(saps.licznik_widoczny)).grid(row=5, column=saps.kolumna + 1)
+
+
+            label_iloscbomb = Label(okno, bg=backg, font=czcionka, text="  Ilość bomb: {}".format(saps.licznik_widoczny)).grid(row=5, column=saps.kolumna, columnspan=2)
+
+            saps.wynik -= saps.liczbabomb_stala / 10 * saps.licznik_widoczny
+            label_wynik = Label(okno, bg=backg, font=czcionka,
+                                text="Twój wynik to: {:.0f}".format(saps.wynik / (time.time() - saps.czas_startu)))
+            label_wynik.grid(row=6, column=saps.kolumna)
 
             for i in range(pos[0] * saps.kolumna, (pos[0] + 1) * saps.kolumna):
                 if (plansza[i][1], plansza[i][2]) == pos:
@@ -207,12 +229,6 @@ def main(poziom):
                 przycisk.bind("<Button-3>", saps.flaga)
                 przycisk.grid(column=plansza[szukanepole][2], row=plansza[szukanepole][1])
 
-            if saps.licznik_ukryty == 0 and saps.licznik_ukryty == saps.licznik_widoczny:
-                saps.koniec_gry()
-                czas_konca = time.time()
-                czas_gry = czas_konca - saps.czas_startu
-                staty(czas_gry, saps.wynik)
-
 
         def flaga(self, event):
             """flaguje pole"""
@@ -228,23 +244,19 @@ def main(poziom):
 
             saps.wynik += saps.liczbabomb_stala/10 * saps.licznik_widoczny
             label_wynik = Label(okno, bg=backg, font=czcionka,
-                                text="Twój wynik to: {:.0f}   ".format(saps.wynik/(time.time()-saps.czas_startu)))
-            label_wynik.grid(row=6, column=saps.kolumna + 1)
+                                text="Twój wynik to: {:.0f}".format(saps.wynik/(time.time()-saps.czas_startu)))
+            label_wynik.grid(row=6, column=saps.kolumna)
 
             saps.licznik_widoczny -= 1
             label_iloscbomb = Label(okno, bg=backg, font=czcionka, text="Ilość bomb: {}".format(saps.licznik_widoczny))
-            label_iloscbomb.grid(row=5, column=saps.kolumna + 1)
+            label_iloscbomb.grid(row=5, column=saps.kolumna)
 
             flaga=Button(okno, image=iflaga,bg=backg, activebackground=backg, borderwidth=0)
             flaga.bind("<Button-3>", saps.nflaga)
 
             flaga.grid(row=pos[0],column=pos[1])
 
-            if saps.licznik_ukryty == 0 and saps.licznik_ukryty == saps.licznik_widoczny:
-                saps.koniec_gry()
-                czas_konca = time.time()
-                czas_gry = czas_konca - saps.czas_startu
-                staty(czas_gry, saps.wynik)
+
 
         def lpm_na_pole(self,event, x = ()):
             """po nacisnieciu na odkryte pole odkrywa wszystkie pobliskie pola z liczba 0"""
@@ -276,6 +288,7 @@ def main(poziom):
                     bezpieczne_pola += 1
                 if plansza[indeks - saps.kolumna][5] == False:
                     lista_nieodkrytych_pol += [plansza[indeks-saps.kolumna]]
+
 
 
 
@@ -333,7 +346,7 @@ def main(poziom):
                     if p[3] == True:
                         saps.koniec_gry()
                     elif p[3] == False:
-
+                        saps.odkryte_pola += 1
                         plansza[p[0]][5] = None
                         liczba_na_polu = p[4]
                         przycisk = Button(okno, image=liczby[liczba_na_polu], bg=backg, activebackground=backg,borderwidth=0)
@@ -384,6 +397,11 @@ def main(poziom):
                         plansza[indeks - saps.kolumna - 1][6] == None:                                                  # góra lewo
                     saps.lpm_na_pole(event, (plansza[indeks - saps.kolumna - 1][1], plansza[indeks - saps.kolumna - 1][2]))
 
+                print(saps.odkryte_pola + saps.liczbabomb_stala, 'roz')
+                if  saps.odkryte_pola + saps.liczbabomb_stala == saps.kolumna * saps.rzad:
+                    saps.odkryte_pola -= 1
+                    saps.koniec_gry('wygrana')
+
         def lpm(self, event):
             """odkrywa zakryte pole"""
             pos = saps.click()
@@ -396,14 +414,20 @@ def main(poziom):
 
                  if plansza[i][2] == pos[1]:
                     bomby_przylegle = plansza[i][4]
-                    #plansza[i][5]+=1
-                    #print(plansza[i][5])
+
+                    saps.odkryte_pola += 1
+
                     plansza[i][5] = None
                     przycisk = Button(okno, image=liczby[bomby_przylegle],bg=backg, activebackground=backg, borderwidth=0)
                     przycisk.bind("<Button-1>", saps.lpm_na_pole)
                     przycisk.grid(column=pos[1], row=pos[0])
                     if bomby_przylegle == 0:
                         saps.lpm_na_pole(event, (pos[0], pos[1]))
+
+            print(saps.odkryte_pola + saps.liczbabomb_stala, 'lpm')
+            if saps.odkryte_pola + saps.liczbabomb_stala == saps.kolumna * saps.rzad:
+                saps.koniec_gry('wygrana')
+
 
 
         def bomby(self,rzad, kolumna, liczbabomb):
@@ -505,11 +529,12 @@ def main(poziom):
             przycisk.grid(column=losowepole[2], row=losowepole[1])
 
 
-            domenu=Button(okno, bg=backg, text="Powrot do menu", command=saps.powrot_do_menu).grid(row = 3, column = saps.kolumna+1)
-            label_rozmiar = Label(okno, bg=backg,font=czcionka, text="Rozmiar planszy: {}x{}".format(saps.rzad, saps.kolumna)).grid(row = 4, column = saps.kolumna+1)
-            label_iloscbomb = Label(okno, bg=backg,font=czcionka, text = "Ilość bomb: {}  ".format(saps.liczbabomb)).grid(row = 5, column = saps.kolumna+1)
-            label_wynik = Label(okno, bg=backg,font=czcionka, text="Twój wynik to: {}".format(saps.wynik)).grid(row = 6, column = saps.kolumna+1)
-            nowagra = Button(okno, text="Zagraj jeszcze raz", font=czcionka, command=saps.nowa_gra).grid(column=saps.kolumna + 1, rowspan=2, row=7)
+            domenu=Button(okno, bg=backg, text="Powrot do menu", command=saps.powrot_do_menu).grid(row = 3, column = saps.kolumna)
+            label_rozmiar = Label(okno, bg=backg,font=czcionka, text="Rozmiar planszy: {}x{}".format(saps.rzad, saps.kolumna)).grid(row = 4, column = saps.kolumna)
+            label_iloscbomb = Label(okno, bg=backg,font=czcionka, text = "Ilość bomb: {}".format(saps.liczbabomb)).grid(row = 5, column = saps.kolumna)
+            label_wynik = Label(okno, bg=backg,font=czcionka, text="Twój wynik to: {}".format(saps.wynik)).grid(row = 6, column = saps.kolumna)
+            nowagra = Button(okno, image=start, borderwidth=0, command=saps.nowa_gra, bg=backg, activebackground=backg).grid(column=saps.kolumna, rowspan=2, row=7)
+            naglowek = Label(okno, bg=backg, image=tlo).grid(row = 0,rowspan=2, column = saps.kolumna)
 
             okno.mainloop()
 
@@ -519,11 +544,14 @@ def main(poziom):
     backg="#126748"
     czcionka = font.Font(family='Helvetica', size=24)
 
-    okno.configure(bg=backg,)
+    okno.configure(bg=backg)
     okno.title("Minesweeper")
+    okno.resizable(0,0)
     liczby=[PhotoImage(file="pole0.png"),PhotoImage(file="pole1.png"),PhotoImage(file="pole2.png"),PhotoImage(file="pole3.png"),PhotoImage(file="pole4.png")
         ,PhotoImage(file="pole5.png"),PhotoImage(file="pole6.png"),PhotoImage(file="pole7.png")]
 
+    tlo = PhotoImage(file='tlo.png')
+    start = PhotoImage(file='start.png')
     ipole = PhotoImage(file="pole.png")
     ibomb = PhotoImage(file="bomba.png")
     iflaga= PhotoImage(file='flaga.png')
@@ -534,7 +562,6 @@ def main(poziom):
 
         bomby=saps.bomby(saps.rzad, saps.kolumna, saps.liczbabomb)
         plansza=saps.plansza(saps.rzad, saps.kolumna)
-        #listabomb=saps.drugalistabomb()
         saps.sasiadbomby(saps.kolumna, saps.rzad)
 
         saps.rysowanieplanszy()
